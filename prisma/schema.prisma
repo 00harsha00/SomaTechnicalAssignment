@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Todo {
+  id          Int             @id @default(autoincrement())
+  title       String
+  createdAt   DateTime         @default(now())
+  dueDate     DateTime?
+  imageUrl    String?
+  // Add explicit relation fields for the dependencies
+  // A Todo can have many dependencies (where it's the 'todo' in TodoDependency)
+  // and can be depended on by many other todos (where it's the 'dependsOn' in TodoDependency)
+  dependsOnMe TodoDependency[] @relation("dependsOnRelation") // This todo is being depended on
+  myDependencies TodoDependency[] @relation("todoRelation")   // This todo depends on others
+}
+
+model TodoDependency {
+  id          Int      @id @default(autoincrement())
+  todoId      Int
+  dependsOnId Int
+  // Explicitly link these back to the new fields in Todo
+  todo        Todo     @relation("todoRelation", fields: [todoId], references: [id], onDelete: Cascade)
+  dependsOn   Todo     @relation("dependsOnRelation", fields: [dependsOnId], references: [id], onDelete: Cascade)
+
+  @@unique([todoId, dependsOnId])
+}
